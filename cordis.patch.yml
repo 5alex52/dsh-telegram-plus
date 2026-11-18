@@ -1,0 +1,14 @@
+# dsh-telegram-plus bundle layer.
+# One plugin row: turns, errors, questions, plan reviews and tool approvals go
+# to a Telegram chat with Telegram-native formatting. With replies enabled the
+# row also answers pending questions and approvals from that chat. The browser
+# half adds the Settings → Telegram page that writes this row's config and
+# stores the bot token in the credential store.
+- insert:
+    - id: telegram-plus
+      name: "dsh-telegram-plus"
+      config:
+        # Empty keeps the plugin loaded but idle, so a fresh install cannot
+        # fail the profile before the chat id exists. Configure it in the
+        # Settings page (or override this row in cordis.patch.yml).
+        chatId: ""

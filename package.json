@@ -27,7 +27,8 @@
   ],
   "scripts": {
     "test": "node --test",
-    "prepublishOnly": "npm test"
+    "prepublishOnly": "npm test",
+    "release": "npm test && npm publish --access public"
   },
   "engines": {
     "node": ">=22",

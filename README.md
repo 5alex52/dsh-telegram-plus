@@ -172,6 +172,21 @@ resolution, delivery with the HTML→plain fallback, question and approval
 buttons, free-text answers, the race against the browser answerer, and the
 polling loop. Every HTTP call goes to a local Bot API stub.
 
+## Development
+
+```bash
+npm install      # required before the first test run: the plugin imports @deepseek-ai/schemastery
+npm test         # node --test, 22 tests, no network
+```
+
+`npm publish` runs `npm test` through `prepublishOnly`, so a clone without
+`npm install` cannot be published — that is the intended gate. To release:
+
+```bash
+npm login          # once
+npm run release    # tests, then npm publish --access public
+```
+
 ## Credits
 
 A fork of [dsh-telegram-notify](https://github.com/RGarrido03/dsh-telegram-notify)

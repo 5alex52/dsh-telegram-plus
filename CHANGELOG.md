@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `publish.yml`: publishing to npm on `v*` tags (a published GitHub release or a
+  manual dispatch does the same). The tag must name the `package.json` version,
+  tests run first, and the publish uses OIDC trusted publishing with provenance.
+  A tag for a version that is already on npm is a no-op, so re-tagging is safe.
+- `npm run release` script (`npm test && npm publish --access public`).
+- CI badge, and `package-lock.json` is committed; CI now runs `npm ci`.
+- README sections **Development** and **Releasing**.
+
+### Changed
+
+- The license badge reads GitHub's license detection
+  (`img.shields.io/github/license/…`) instead of `npm/l`, which kept serving a
+  cached "package not found" from before the first publish. The version badge
+  URL carries `cacheSeconds` so GitHub's image proxy fetches it again.
+
+### Fixed
+
+- Publishing from a clone without `node_modules` failed at `prepublishOnly`, which
+  runs `npm test`, while the plugin imports `@deepseek-ai/schemastery`: the gate
+  is now documented in **Development** and the tag workflow installs
+  dependencies with `npm ci` before testing.
+
 ## 0.1.0 — 2026-11-18
 
 First public release. Fork of

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 — 2026-11-18
 
 ### Added
 
@@ -11,6 +11,8 @@
 - `npm run release` script (`npm test && npm publish --access public`).
 - CI badge, and `package-lock.json` is committed; CI now runs `npm ci`.
 - README sections **Development** and **Releasing**.
+- `AGENTS.md` with the repository's development rules, including the mandatory
+  changelog policy for every user-visible change.
 
 ### Changed
 

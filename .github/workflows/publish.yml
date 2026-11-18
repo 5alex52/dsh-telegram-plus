@@ -1,0 +1,68 @@
+name: publish
+
+# Publishing is a deliberate act: push an annotated `v<version>` tag (or publish
+# a GitHub release, or run this workflow by hand). The version always comes from
+# package.json, so bump it in the commit the tag points at — npm refuses to
+# publish over an existing version, and this workflow skips an already published
+# version instead of failing.
+on:
+  push:
+    tags: ['v*']
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Trusted publishing: the npm CLI exchanges this OIDC token for a short-lived
+  # publish credential, so no long-lived npm token is stored anywhere. The same
+  # permission carries the provenance attestation.
+  id-token: write
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify the tag names the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version="$(node -p "require('./package.json').version")"
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match package.json ${version}"
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm test
+
+      - name: Check whether this version is already on npm
+        id: guard
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if npm view "dsh-telegram-plus@${version}" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::dsh-telegram-plus@${version} is already published; nothing to do"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Trusted publishing needs npm >= 11.5.1, newer than the npm bundled with
+      # the node version above.
+      - name: Publish with provenance
+        if: steps.guard.outputs.published == 'false'
+        run: |
+          npm install --global npm@latest
+          npm --version
+          npm publish --access public --provenance

@@ -188,6 +188,23 @@ npm login          # once
 npm run release    # tests, then npm publish --access public
 ```
 
+## Releasing
+
+Bump `version` in `package.json`, move `CHANGELOG.md` under the new version, commit, then tag:
+
+```bash
+git tag -a v0.1.1 -m "dsh-telegram-plus 0.1.1"
+git push origin main --follow-tags
+```
+
+`.github/workflows/publish.yml` runs on `v*` tags (a published GitHub release,
+or a manual dispatch, does the same): it checks that the tag names the
+`package.json` version, runs the tests, and publishes with npm provenance
+through OIDC trusted publishing. Configure **Trusted publishing** once on the
+npm package page (package settings → Trusted publishing → GitHub Actions,
+workflow `publish.yml`); no `NPM_TOKEN` secret is needed. A tag for a version
+that is already on npm is a no-op, so re-tagging is safe.
+
 ## Credits
 
 A fork of [dsh-telegram-notify](https://github.com/RGarrido03/dsh-telegram-notify)

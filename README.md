@@ -199,21 +199,46 @@ git push origin main --follow-tags
 
 `.github/workflows/publish.yml` runs on `v*` tags (a published GitHub release,
 or a manual dispatch, does the same): it checks that the tag names the
-`package.json` version, runs the tests, and publishes with npm provenance
-through OIDC trusted publishing. Configure **Trusted publishing** once on the
-npm package page (package settings → Trusted publishing → GitHub Actions,
-workflow `publish.yml`); no `NPM_TOKEN` secret is needed. A tag for a version
-that is already on npm is a no-op, so re-tagging is safe.
+`package.json` version, runs the tests, and publishes with provenance through
+OIDC trusted publishing. A tag for a version that is already on npm is a no-op,
+so re-tagging is safe.
 
-npm's trusted publishing cannot verify GitHub's immutable OIDC subject claims
-([npm/cli#9969](https://github.com/npm/cli/issues/9969)), which every repository
-created after 2026‑07‑15 uses: the exchange is refused with `403 OIDC permission
-denied for this action`. Until the registry understands those claims, add a
-**granular access token** (scope: this package, read and write, 2FA bypass) as
-the repository secret `NPM_TOKEN`; the workflow then publishes with it and keeps
-provenance. Once npm fixes the issue, delete the secret and the trusted-publisher
-path takes over again. `npm stage publish` plus an approval on npmjs.com is the
-2FA-bypass-free alternative after that window closes.
+### Trusted publishing
+
+Configure the relationship once, from a machine with your npm 2FA (npm ≥ 11.19):
+
+```bash
+npm trust github dsh-telegram-plus \
+  --repository 5alex52/dsh-telegram-plus \
+  --file publish.yml \
+  --allow-publish
+npm trust list dsh-telegram-plus   # verify what the registry stored
+```
+
+Requirements the registry checks at publish time, not at save time:
+
+- **repository** must match `owner/repo`, and **workflow filename** must be the
+  bare file name (`publish.yml`, not a path) of the workflow that runs
+  `npm publish` — here `publish.yml`;
+- leave **environment** empty unless the job declares one;
+- a configuration that has never published expires **48 hours** after it was
+  created, so create it right before the release you are testing it with: the
+  first successful publish validates the binding and keeps it.
+
+If the exchange is still refused with
+`403 OIDC permission denied for this action`, check the three fields above, then
+re-create the relationship (`npm trust revoke … --id=<id>`, `npm trust github …`)
+and publish once to validate it. npm/cli#9969 tracks refusals for repositories
+that emit GitHub's immutable OIDC subject form; when that is the cause, the
+workflow's fallback below covers it.
+
+### Fallback: granular token
+
+The workflow publishes with OIDC when no `NPM_TOKEN` secret exists. If trusted
+publishing is unavailable, add a **granular access token** (scope: this package,
+read and write, 2FA bypass) as the repository secret `NPM_TOKEN`; the token step
+then runs instead, provenance included. Remove the secret as soon as OIDC works
+again — npm is restricting 2FA-bypass publishing tokens.
 
 ## Credits
 

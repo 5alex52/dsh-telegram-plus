@@ -16,11 +16,10 @@
 
 ### Changed
 
-- Publishing falls back to a package-scoped granular token (`NPM_TOKEN`) when one
-  is configured: npm cannot read GitHub's immutable OIDC subject claims
-  ([npm/cli#9969](https://github.com/npm/cli/issues/9969)), so trusted publishing
-  answers `403 OIDC permission denied for this action` for repositories created
-  after 2026-07-15. The OIDC step stays for when the registry is fixed.
+- Publishing documents the trusted-publisher setup end to end (`npm trust
+  github …`, `npm trust list`, the 48-hour validation window) and keeps a
+  granular `NPM_TOKEN` as the fallback when the OIDC exchange is refused.
+
 - The license badge reads GitHub's license detection
   (`img.shields.io/github/license/…`) instead of `npm/l`, which kept serving a
   cached "package not found" from before the first publish. The version badge

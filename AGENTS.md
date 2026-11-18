@@ -92,11 +92,13 @@ npm test         # node --test, no network
 release or a manual dispatch): it fails when the tag and `package.json` version
 differ, runs the tests, and publishes with provenance through OIDC trusted
 publishing. A version that is already on npm is skipped, so re-tagging is safe.
-Trusted publishing is configured once on the npm package page. npm currently
-rejects GitHub's immutable OIDC subject claims ([npm/cli#9969](https://github.com/npm/cli/issues/9969)),
-so a package-scoped granular token with 2FA bypass lives in the `NPM_TOKEN`
-secret; the workflow prefers a token when one is set and falls back to OIDC
-otherwise. Remove the secret once npm fixes the claim format.
+Trusted publishing is configured once with
+`npm trust github dsh-telegram-plus --repository 5alex52/dsh-telegram-plus
+--file publish.yml --allow-publish`, and `npm trust list` shows what the registry
+stored. An unpublished configuration expires 48 hours after creation, so create
+it shortly before a release and let the first publish validate it. A package
+scoped granular token in `NPM_TOKEN` is only the fallback for when the OIDC
+exchange is refused; the workflow prefers a token when one is set.
 
 ## Commits and docs
 

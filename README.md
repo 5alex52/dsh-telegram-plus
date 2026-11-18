@@ -1,7 +1,8 @@
 # dsh-telegram-plus
 
-[![npm](https://img.shields.io/npm/v/dsh-telegram-plus)](https://www.npmjs.com/package/dsh-telegram-plus)
-[![license](https://img.shields.io/npm/l/dsh-telegram-plus)](LICENSE)
+[![npm](https://img.shields.io/npm/v/dsh-telegram-plus?cacheSeconds=3600)](https://www.npmjs.com/package/dsh-telegram-plus)
+[![license](https://img.shields.io/github/license/5alex52/dsh-telegram-plus)](LICENSE)
+[![ci](https://github.com/5alex52/dsh-telegram-plus/actions/workflows/ci.yml/badge.svg)](https://github.com/5alex52/dsh-telegram-plus/actions/workflows/ci.yml)
 
 Telegram notifications for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)
 that **look like Telegram messages** — and that you can **answer without

@@ -92,8 +92,11 @@ npm test         # node --test, no network
 release or a manual dispatch): it fails when the tag and `package.json` version
 differ, runs the tests, and publishes with provenance through OIDC trusted
 publishing. A version that is already on npm is skipped, so re-tagging is safe.
-Trusted publishing is configured once on the npm package page — never add an
-`NPM_TOKEN` secret.
+Trusted publishing is configured once on the npm package page. npm currently
+rejects GitHub's immutable OIDC subject claims ([npm/cli#9969](https://github.com/npm/cli/issues/9969)),
+so a package-scoped granular token with 2FA bypass lives in the `NPM_TOKEN`
+secret; the workflow prefers a token when one is set and falls back to OIDC
+otherwise. Remove the secret once npm fixes the claim format.
 
 ## Commits and docs
 

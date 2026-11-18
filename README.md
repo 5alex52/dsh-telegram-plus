@@ -205,6 +205,16 @@ npm package page (package settings → Trusted publishing → GitHub Actions,
 workflow `publish.yml`); no `NPM_TOKEN` secret is needed. A tag for a version
 that is already on npm is a no-op, so re-tagging is safe.
 
+npm's trusted publishing cannot verify GitHub's immutable OIDC subject claims
+([npm/cli#9969](https://github.com/npm/cli/issues/9969)), which every repository
+created after 2026‑07‑15 uses: the exchange is refused with `403 OIDC permission
+denied for this action`. Until the registry understands those claims, add a
+**granular access token** (scope: this package, read and write, 2FA bypass) as
+the repository secret `NPM_TOKEN`; the workflow then publishes with it and keeps
+provenance. Once npm fixes the issue, delete the secret and the trusted-publisher
+path takes over again. `npm stage publish` plus an approval on npmjs.com is the
+2FA-bypass-free alternative after that window closes.
+
 ## Credits
 
 A fork of [dsh-telegram-notify](https://github.com/RGarrido03/dsh-telegram-notify)

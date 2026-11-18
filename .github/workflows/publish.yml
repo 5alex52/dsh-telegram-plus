@@ -23,6 +23,14 @@ concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
+# npm's trusted publishing cannot read GitHub's immutable OIDC subject claims
+# (npm/cli#9969), which every repository created after 2026-07-15 uses, so the
+# OIDC exchange is refused with "403 OIDC permission denied for this action".
+# When a granular access token is configured as NPM_TOKEN, publish with it and
+# keep the OIDC step for the day the registry fix lands.
+env:
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -60,9 +68,21 @@ jobs:
 
       # Trusted publishing needs npm >= 11.5.1, newer than the npm bundled with
       # the node version above.
-      - name: Publish with provenance
-        if: steps.guard.outputs.published == 'false'
+      - name: Publish with provenance (trusted publishing)
+        if: steps.guard.outputs.published == 'false' && env.NPM_TOKEN == ''
         run: |
           npm install --global npm@latest
           npm --version
+          npm publish --access public --provenance
+
+      # Fallback while npm/cli#9969 is open: a granular access token with 2FA
+      # bypass, scoped to this package, stored as the NPM_TOKEN secret.
+      - name: Publish with provenance (granular token)
+        if: steps.guard.outputs.published == 'false' && env.NPM_TOKEN != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+        run: |
+          npm install --global npm@latest
+          npm --version
+          npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
           npm publish --access public --provenance

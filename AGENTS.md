@@ -98,7 +98,10 @@ Trusted publishing is configured once with
 stored. An unpublished configuration expires 48 hours after creation, so create
 it shortly before a release and let the first publish validate it. A package
 scoped granular token in `NPM_TOKEN` is only the fallback for when the OIDC
-exchange is refused; the workflow prefers a token when one is set.
+exchange is refused; the workflow prefers a token when one is set. 0.1.2
+published through the exchange despite the repository being created after
+2026-07-15, so the fallback is dormant today — set the secret only if the OIDC
+step starts refusing.
 
 ## Commits and docs
 

@@ -23,11 +23,12 @@ concurrency:
   group: publish-${{ github.ref }}
   cancel-in-progress: false
 
-# npm's trusted publishing cannot read GitHub's immutable OIDC subject claims
-# (npm/cli#9969), which every repository created after 2026-07-15 uses, so the
-# OIDC exchange is refused with "403 OIDC permission denied for this action".
-# When a granular access token is configured as NPM_TOKEN, publish with it and
-# keep the OIDC step for the day the registry fix lands.
+# Trusted publishing works for this repository as it stands: 0.1.2
+# (2026-11-24, repository created 2026-11-18) published through the OIDC
+# exchange with provenance and without a token, even though npm/cli#9969 reports
+# refusals for repositories that emit GitHub's immutable OIDC subject form.
+# A granular access token in NPM_TOKEN stays as the escape hatch: set the secret
+# only if the OIDC step starts failing.
 env:
   NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 

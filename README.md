@@ -56,7 +56,7 @@ message, and only when it is actually done.
 | `> quote` | `<blockquote>` |
 | `# Heading` | bold line |
 | `- item`, `1. item` | `• item`, bold number |
-| pipe tables | fixed-width `<pre>` block |
+| pipe tables | aligned columns in a `<pre>` block: pipes are dropped, columns are padded by display width, a long table is split with its header repeated |
 
 Set `format: plain` to send raw text instead.
 

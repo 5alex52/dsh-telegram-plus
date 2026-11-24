@@ -169,6 +169,27 @@ test('wiring: follow-up turns of one task coalesce into the last answer', async 
   }
 })
 
+test('wiring: a turn that ends mid-run waits for the agent to go idle', async () => {
+  const bot = await startFakeBot()
+  let status = 'running'
+  const harness = fakeContext({ agents: { get: () => ({ id: 'session-1', status }) } })
+  try {
+    apply(harness.ctx, { chatId: '4242', token: '123456:AAexample-token-value', apiBase: bot.base })
+    emitTurn(harness, rootSession(), { text: 'interim answer' })
+    await wait(2600)
+    assert.equal(bot.methods('sendMessage').length, 0, 'the harness is still working on the same run')
+    status = 'idle'
+    await wait(2600)
+    const sent = bot.methods('sendMessage')
+    assert.equal(sent.length, 1, 'the run is announced once it is over')
+    assert.match(sent[0].payload.text, /interim answer/)
+  }
+  finally {
+    harness.dispose()
+    await bot.close()
+  }
+})
+
 test('wiring: a report waits while subagents are still working', async () => {
   const bot = await startFakeBot()
   let release

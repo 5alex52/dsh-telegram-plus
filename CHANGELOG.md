@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.1.3 — 2026-11-24
+
+### Changed
+
+- A finished turn is announced only once the agent is idle. While the harness
+  still has work queued for the same run — a continuation, a goal round, a
+  tool-jobs wake, a teammate's report — the message waits instead of describing
+  a task that is not over.
+
+### Fixed
+
+- A markdown table reached the chat as raw pipe source in a code block, so the
+  columns never lined up. A table is now a grid: pipes are dropped, columns are
+  padded by display width (Cyrillic and CJK included), a cell wider than its
+  column is cut with an ellipsis, and a long table is split into blocks that
+  repeat the header.
+
 ## 0.1.2 — 2026-11-24
 
 ### Added

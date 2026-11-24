@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   createApi,
   createBroker,
+  displayWidth,
   escapeXml,
   formatCompleted,
   formatQuestions,
@@ -86,7 +87,38 @@ test('escapes every value and keeps code literal', () => {
     toTelegramHtml('```ts\nconst a = 1 < 2 && b\n```'),
     '<pre><code class="language-ts">const a = 1 &lt; 2 &amp;&amp; b</code></pre>',
   )
-  assert.equal(toTelegramHtml('| a | b |\n| - | - |'), '<pre>| a | b |\n| - | - |</pre>')
+  assert.equal(toTelegramHtml('| a | b |\n| - | - |'), '<pre>a │ b\n──┼──</pre>')
+})
+
+test('renders a table as an aligned grid instead of raw pipe source', () => {
+  const html = toTelegramHtml('| Поле | Значение |\n| --- | --- |\n| Версия | 0.1.2 |')
+  assert.equal(html, '<pre>Поле   │ Значение\n───────┼─────────\nВерсия │ 0.1.2   </pre>')
+  assert.ok(!html.includes('| ---'), 'the separator row is a rule, not source text')
+  assert.ok(!html.includes('| Версия'), 'cells are padded, not wrapped in pipes')
+})
+
+test('aligns table columns by display width, not code units', () => {
+  const html = toTelegramHtml('| 名前 | 値 |\n| --- | --- |\n| 東京 | ok |')
+  const lines = html.replace(/^<pre>/, '').replace(/<\/pre>$/, '').split('\n')
+  assert.equal(new Set(lines.map((line) => displayWidth(line))).size, 1, 'every row occupies the same width')
+  assert.ok(lines[0].startsWith('名前'))
+})
+
+test('cuts wide table cells and repeats the header across blocks', () => {
+  const rows = Array.from({ length: 200 }, (_, index) => `| ${index} | ${'x'.repeat(40)} |`)
+  const html = toTelegramHtml(['| n | v |', '| --- | --- |', ...rows].join('\n'))
+  const blocks = html.split('<pre>').slice(1)
+  assert.ok(blocks.length > 1, 'a long table is split into several blocks')
+  const headers = blocks.map((block) => block.split('\n')[0])
+  assert.equal(new Set(headers).size, 1, 'each block repeats the header')
+  assert.ok(html.includes('…'), 'a cell wider than its column is cut')
+})
+
+test('keeps formatting syntax out of a table cell', () => {
+  const html = toTelegramHtml('| **bold** | `code` |\n| --- | --- |\n| [link](https://x.io) | plain |')
+  assert.ok(!html.includes('<b>') && !html.includes('<code>'))
+  assert.match(html, /bold\s+│ code/)
+  assert.match(html, /link\s+│ plain/)
 })
 
 test('keeps emphasis out of already escaped text', () => {

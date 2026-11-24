@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Telegram notifications",
-    "description": "Send turns, errors, questions, plan reviews and tool approvals to a Telegram chat with Telegram-native formatting, and answer questions and approvals right from the chat."
+    "description": "Send finished tasks, errors, questions, plan reviews and tool approvals to a Telegram chat with Telegram-native formatting, and answer questions and approvals right from the chat."
   }
 }

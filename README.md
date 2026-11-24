@@ -16,23 +16,27 @@ question or a tool approval becomes a message with buttons, and your tap (or
 your reply) is the answer DSH receives.
 
 ```
-✅ Turn complete
-📁 my-project — Fix the CI pipeline
-👤 why is the build red?
-🤖 **Found it**: the cache key uses `pwd` …
+✅ my-project — Fix the CI pipeline
 
-        [ Yes ]  [ No ]                 ← tap to answer a pending question
-    [ ✅ Allow once ] [ ❌ Reject ]      ← tap to decide a tool approval
+**Found it**: the cache key uses `pwd`, so every worktree misses it.
+
+- rebuild the cache on `package-lock.json`
 ```
+
+The whole answer arrives — every paragraph, list and code block, rendered
+with Telegram formatting. A task that took twenty turns still sends one
+message, and only when it is actually done.
 
 ## Features
 
 | | |
 | --- | --- |
 | **Telegram-native formatting** | Markdown becomes `<b>`, `<i>`, `<s>`, `<code>`, `<pre>`, `<blockquote>`, `<a href>`. Every dynamic value is escaped, so model output can never inject markup. |
-| **Long messages stay whole** | Text over Telegram's 4096-character limit is split at line boundaries into several messages instead of being cut. |
+| **Long messages stay whole** | The rendered message is split across several messages when it exceeds Telegram's 4096-character limit — a code block or a bold span that crosses a boundary is closed and reopened instead of being cut. |
 | **Never a lost message** | If Telegram rejects an entity, the message is retried once as plain text. |
-| **Turn notifications** | Completed, failed, blocked, max-token and cancelled turns, with workspace, session title, your last prompt and the agent's answer. |
+| **One message per task** | The full final answer of a task you started, sent once when the run goes quiet — after any agent-team or delegated subagent work has settled. Intermediate turns are coalesced, and an answer with no text sends nothing. |
+| **Quiet background** | Scheduled or unattended runs do not report every check; turn on **Background runs** to receive their results too. |
+| **Failures still arrive** | Failed, blocked, max-token and cancelled turns are reported immediately, with the workspace and the reason. |
 | **Plan reviews** | A plan waiting for approval arrives with the plan body. |
 | **Answer questions from the chat** | A pending `ask_user_question` is posted with one inline button per option; a plain reply is taken as a free-text answer. |
 | **Decide approvals from the chat** | A pending tool approval arrives with **✅ Allow once / ❌ Reject**. |
@@ -99,7 +103,8 @@ The Settings page writes the `telegram-plus` row of
     allowReplies: true    # read button presses and replies
     answerTimeoutMinutes: 0
     silent: false
-    notifyTurnComplete: true
+    notifyTurnComplete: true   # one message per task you started
+    notifyBackground: false    # also report scheduled/unattended runs
     notifyTurnError: true
     notifyTurnAborted: false
     notifyQuestions: true
@@ -117,7 +122,8 @@ The Settings page writes the `telegram-plus` row of
 | `allowReplies` | `true` | Read Telegram updates and let the chat answer. |
 | `answerTimeoutMinutes` | `0` | Close a Telegram prompt after N minutes; `0` waits. |
 | `silent` | `false` | Send without a notification sound. |
-| `notifyTurnComplete` | `true` | Completed turns. |
+| `notifyTurnComplete` | `true` | The final answer of a task you started, once per task. |
+| `notifyBackground` | `false` | Also report scheduled/unattended runs when they finish. |
 | `notifyTurnError` | `true` | Failed, blocked and max-token turns. |
 | `notifyTurnAborted` | `false` | Cancelled turns. |
 | `notifyQuestions` | `true` | Pending questions. |
@@ -165,10 +171,10 @@ questions, reply with one line per question, in order. Timed asks (the
 ## Tests
 
 ```bash
-npm test        # node --test, 22 tests, no network
+npm test        # node --test, 33 tests, no network
 ```
 
-The suite covers markdown rendering and escaping, message splitting, settings
+The suite covers markdown rendering and escaping, HTML-aware message splitting, settings
 resolution, delivery with the HTML→plain fallback, question and approval
 buttons, free-text answers, the race against the browser answerer, and the
 polling loop. Every HTTP call goes to a local Bot API stub.
@@ -177,7 +183,7 @@ polling loop. Every HTTP call goes to a local Bot API stub.
 
 ```bash
 npm install      # required before the first test run: the plugin imports @deepseek-ai/schemastery
-npm test         # node --test, 22 tests, no network
+npm test         # node --test, 33 tests, no network
 ```
 
 `npm publish` runs `npm test` through `prepublishOnly`, so a clone without
@@ -193,7 +199,7 @@ npm run release    # tests, then npm publish --access public
 Bump `version` in `package.json`, move `CHANGELOG.md` under the new version, commit, then tag:
 
 ```bash
-git tag -a v0.1.1 -m "dsh-telegram-plus 0.1.1"
+git tag -a v<version> -m "dsh-telegram-plus <version>"
 git push origin main --follow-tags
 ```
 

@@ -1,5 +1,42 @@
 # Changelog
 
+## Unreleased
+
+## 0.1.2 — 2026-11-24
+
+### Added
+
+- `notifyBackground` (off by default) and a **Background runs** toggle on the
+  Settings page: scheduled or unattended runs report their result when it is
+  on. With it off, a polling task that finds nothing new no longer sends a
+  message after every check — questions and approvals still do.
+
+### Changed
+
+- A task is announced once, when the run goes quiet, instead of a message per
+  turn. A follow-up turn of the same run (auto-continuation, a queued
+  follow-up, a report from a teammate) cancels the pending message and the
+  last answer is what the chat receives. While subagents — an agent team, a
+  delegated child — are still working, the message waits for them, so a
+  running team does not narrate each captain turn.
+- The completion message carries the agent's final answer in full, with its
+  Markdown rendered: paragraphs, lists, tables and fenced code keep the shape
+  they have in the DSH transcript. An answer with no text sends nothing.
+- The `Turn complete` heading and the echoed user prompt are gone; a single
+  `✅ workspace — title` line gives the context above the answer.
+- Long messages are converted to HTML first and then split, so a code block,
+  a bold span or a link that crosses a message boundary is closed and
+  reopened instead of reaching the chat broken. Question and plan prompts
+  split the same way, with their buttons on the last part.
+- A plan review carries the whole plan (up to the notification cap) instead of
+  stopping at 1500 characters; other question detail keeps up to 3000.
+
+### Fixed
+
+- A finished task used to send a one-line, 900-character snippet with every
+  newline collapsed, so the chat showed neither the formatting nor the rest
+  of the answer.
+
 ## 0.1.1 — 2026-11-18
 
 ### Added

@@ -10,7 +10,9 @@ import {
   inlineToHtml,
   resolveSettings,
   splitForTelegram,
+  splitTelegramHtml,
   startPoller,
+  stripHtml,
   toTelegramHtml,
 } from '../lib/index.js'
 
@@ -106,6 +108,50 @@ test('splits long text on line boundaries without losing content', () => {
   assert.equal(hard.join(''), longLine)
 })
 
+const countOf = (value, pattern) => (value.match(pattern) ?? []).length
+
+test('splits rendered HTML without leaving a tag open', () => {
+  const line = '**bold** and `code` and a [link](https://example.com/a?b=1&c=2) — '
+  const markdown = Array.from({ length: 40 }, (_, index) => `- ${index} ${line}`).join('\n')
+  const html = toTelegramHtml(markdown)
+  const parts = splitTelegramHtml(html, 300)
+  assert.ok(parts.length > 1)
+  assert.ok(parts.every((part) => part.length <= 300))
+  const tags = ['b', 'i', 's', 'code', 'pre', 'a', 'blockquote']
+  for (const part of parts) {
+    for (const tag of tags) {
+      const opened = countOf(part, new RegExp('<' + tag + '[ >]', 'g'))
+      assert.equal(opened, countOf(part, new RegExp('</' + tag + '>', 'g')), tag + ' must balance in ' + part.slice(0, 40))
+    }
+  }
+  const normalize = (value) => stripHtml(value).replace(/\s+/g, '')
+  assert.equal(parts.map(normalize).join(''), normalize(html))
+})
+
+test('an opening tag near the boundary keeps room for its closing tag', () => {
+  for (let length = 3860; length <= 3902; length += 1) {
+    const html = 'x'.repeat(length) + '<code>ab</code>' + 'y'
+    const parts = splitTelegramHtml(html, 3900)
+    assert.ok(parts.every((part) => part.length <= 3900), 'part over the limit at ' + length)
+    for (const part of parts) {
+      assert.equal(countOf(part, /<code[ >]/g), countOf(part, /<\/code>/g), 'code must balance at ' + length)
+    }
+  }
+})
+
+test('a code block split across messages stays a code block', () => {
+  const html = `<pre>${Array.from({ length: 80 }, (_, index) => `line ${index}`).join('\n')}</pre>`
+  const parts = splitTelegramHtml(html, 200)
+  assert.ok(parts.length > 1)
+  for (const part of parts) {
+    assert.ok(part.startsWith('<pre>'), 'reopens the code block')
+    assert.ok(part.endsWith('</pre>'), 'closes the code block')
+  }
+  assert.equal(parts.map(stripHtml).join('').replace(/\s+/g, ''), stripHtml(html).replace(/\s+/g, ''))
+  assert.deepEqual(splitTelegramHtml('<b>short</b>', 300), ['<b>short</b>'])
+  assert.deepEqual(splitTelegramHtml('', 300), [])
+})
+
 test('resolves settings with reply defaults', () => {
   const settings = resolveSettings({ chatId: '1', token: 'x:y' })
   assert.equal(settings.allowReplies, true)
@@ -114,17 +160,39 @@ test('resolves settings with reply defaults', () => {
   assert.equal(resolveSettings({ token: 'x:y', format: 'plain' }).format, 'plain')
   assert.equal(resolveSettings({ token: 'x:y', allowReplies: false }).allowReplies, false)
   assert.equal(resolveSettings({ chatId: '1', token: 'x:y', answerTimeoutMinutes: -3 }).answerTimeoutMinutes, 0)
+  assert.equal(resolveSettings({ chatId: '1', token: 'x:y' }).notifyBackground, false)
+  assert.equal(resolveSettings({ chatId: '1', token: 'x:y', notifyBackground: true }).notifyBackground, true)
   assert.equal(resolveSettings({ apiBase: 'ftp://nope' }), undefined)
   assert.equal(resolveSettings({ tokenRef: 'bad ref!' }), undefined)
   assert.ok(resolveSettings({ token: 'x:y', tokenRef: 'bad ref!' }))
 })
 
-test('formats a completed turn as markdown that converts to HTML', () => {
-  const markdown = formatCompleted(session, { ...state, assistant: '**Done**: sent 3 messages' })
+test('a finished task keeps the whole answer as markdown', () => {
+  const answer = [
+    '## Done',
+    '',
+    '**Sent** 3 messages and updated `README.md`.',
+    '',
+    '- first item',
+    '- second item',
+    '',
+    '```ts',
+    'const a = 1 < 2',
+    '```',
+  ].join('\n')
+  const markdown = formatCompleted(session, { ...state, assistant: answer })
+  assert.ok(markdown.includes('\n\n**Sent**'), 'paragraphs survive')
+  assert.ok(markdown.includes('- first item'), 'lists survive')
   const html = toTelegramHtml(markdown)
-  assert.match(html, /<b>Turn complete<\/b>/)
-  assert.match(html, /<b>Done<\/b>: sent 3 messages/)
-  assert.match(html, /📁 project — Fix the telegram formatting/)
+  assert.match(html, /✅ project — Fix the telegram formatting/)
+  assert.match(html, /<b>Done<\/b>/)
+  assert.match(html, /• first item/)
+  assert.match(html, /<pre><code class="language-ts">const a = 1 &lt; 2<\/code><\/pre>/)
+})
+
+test('a task with no answer produces no message', () => {
+  assert.equal(formatCompleted(session, { ...state, assistant: '' }), '')
+  assert.equal(formatCompleted(session, { ...state, assistant: '   \n  ' }), '')
 })
 
 test('formats questions with options', () => {
